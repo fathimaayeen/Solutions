@@ -38,10 +38,6 @@ public class Todo {
         this.todo = todo;
     }
 
-
-    
-
-
      public String getStatus() {
         return status;
     }
