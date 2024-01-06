@@ -1,12 +1,14 @@
 package com.example.movie.model;
 
+
 import javax.persistence.*;
 
 @Entity
-@Table(name = "movielist")
+@Table(name="movielist")
 public class Movie {
+
     @Id
-    @Column(name = "movieid")
+    @Column(name="movieid")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int movieId;
 
@@ -16,9 +18,8 @@ public class Movie {
     @Column(name = "leadactor")
     private String leadActor;
 
-    public Movie() {
-    }
-
+    public Movie(){}
+    
     public Movie(int movieId, String movieName, String leadActor) {
         this.movieId = movieId;
         this.movieName = movieName;
