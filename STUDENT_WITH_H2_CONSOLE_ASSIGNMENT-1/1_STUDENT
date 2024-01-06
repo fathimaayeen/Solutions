@@ -1,1 +1,211 @@
+package com.example.todo.model;
 
+import javax.persistence.*;
+
+@Entity
+@Table(name = "todolist")
+public class Todo {
+    @Id
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @Column(name = "todo")
+    private String todo;
+
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "priority")
+    private String priority;
+
+    public Todo() {
+    }
+
+    public Todo(int id, String todo, String priority, String status) {
+        this.id = id;
+        this.todo = todo;
+        this.priority = priority;
+        this.status = status;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getTodo() {
+        return todo;
+    }
+
+    public void setTodo(String todo) {
+        this.todo = todo;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public void setPriority(String priority) {
+        this.priority = priority;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+}
+
+package com.example.todo.repository;
+
+import com.example.todo.model.Todo;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface TodoJpaRepository extends JpaRepository<Todo, Integer> {
+}
+
+package com.example.todo.repository;
+
+import com.example.todo.model.Todo;
+
+import java.util.*;
+
+public interface TodoRepository {
+
+    ArrayList<Todo> getTodos();
+
+    Todo getTodoById(int todoId);
+
+    Todo addTodo(Todo todo);
+
+    Todo updateTodo(int todoId, Todo todo);
+
+    void deleteTodo(int todoId);
+}
+
+package com.example.todo.service;
+
+import com.example.todo.model.Todo;
+import com.example.todo.repository.TodoJpaRepository;
+import com.example.todo.repository.TodoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.*;
+
+@Service
+public class TodoJpaService implements TodoRepository {
+
+    @Autowired
+    private TodoJpaRepository todoJpaRepository;
+
+    @Override
+    public ArrayList<Todo> getTodos() {
+        List<Todo> todolist = todoJpaRepository.findAll();
+        ArrayList<Todo> todos = new ArrayList<>(todolist);
+        return todos;
+    }
+
+    @Override
+    public Todo getTodoById(int id) {
+        try {
+            Todo todo = todoJpaRepository.findById(id).get();
+            return todo;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public Todo addTodo(Todo todo) {
+        todoJpaRepository.save(todo);
+        return todo;
+    }
+
+    @Override
+    public Todo updateTodo(int id, Todo todo) {
+        try {
+            Todo newTodo = todoJpaRepository.findById(id).get();
+
+            if (todo.getTodo() != null) {
+                newTodo.setTodo(todo.getTodo());
+            }
+            if (todo.getPriority() != null) {
+                newTodo.setPriority(todo.getPriority());
+            }
+            if (todo.getStatus() != null) {
+                newTodo.setStatus(todo.getStatus());
+            }
+
+            todoJpaRepository.save(newTodo);
+            return newTodo;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public void deleteTodo(int id) {
+        try {
+            todoJpaRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+}
+
+package com.example.todo.controller;
+
+import com.example.todo.service.TodoJpaService;
+import com.example.todo.model.Todo;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import java.util.*;
+
+@RestController
+public class TodoController {
+
+    @Autowired
+    private TodoJpaService todoService;
+
+    @GetMapping("/todos")
+    public ArrayList<Todo> getTodos() {
+
+        return todoService.getTodos();
+    }
+
+    @GetMapping("/todos/{id}")
+    public Todo getTodoById(@PathVariable("id") int id) {
+
+        return todoService.getTodoById(id);
+    }
+
+    @PostMapping("/todos")
+    public Todo addTodo(@RequestBody Todo todo) {
+
+        return todoService.addTodo(todo);
+    }
+
+    @PutMapping("/todos/{id}")
+    public Todo updateTodo(@PathVariable("id") int id, @RequestBody Todo todo) {
+
+        return todoService.updateTodo(id, todo);
+    }
+
+    @DeleteMapping("/todos/{id}")
+    public void deleteTodo(@PathVariable int id) {
+
+        todoService.deleteTodo(id);
+    }
+}
