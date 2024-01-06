@@ -1,14 +1,14 @@
 package com.example.movie.service;
 
-import com.example.movie.model.Movie;
-import com.example.movie.repository.MovieJpaRepository;
-import com.example.movie.repository.MovieRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.util.*;
+
+import com.example.movie.model.Movie;
+import com.example.movie.repository.MovieRepository;
+import com.example.movie.repository.MovieJpaRepository;
 
 @Service
 public class MovieJpaService implements MovieRepository {
@@ -18,8 +18,9 @@ public class MovieJpaService implements MovieRepository {
 
     @Override
     public ArrayList<Movie> getMovies() {
-        List<Movie> movielist = movieJpaRepository.findAll();
-        ArrayList<Movie> movies = new ArrayList<>(movielist);
+        List<Movie> movieCollection = movieJpaRepository.findAll();
+        ArrayList<Movie> movies = new ArrayList<>(movieCollection);
+
         return movies;
     }
 
@@ -49,7 +50,6 @@ public class MovieJpaService implements MovieRepository {
             if (movie.getLeadActor() != null) {
                 newMovie.setLeadActor(movie.getLeadActor());
             }
-
             movieJpaRepository.save(newMovie);
             return newMovie;
         } catch (Exception e) {
@@ -64,5 +64,7 @@ public class MovieJpaService implements MovieRepository {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
+
     }
+
 }
