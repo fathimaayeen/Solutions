@@ -1,101 +1,90 @@
-package com.example.todo.model;
+package com.example.movie.model;
 
 import javax.persistence.*;
 
 @Entity
-@Table(name = "todolist")
-public class Todo {
+@Table(name = "movielist")
+public class Movie {
     @Id
-    @Column(name = "id")
+    @Column(name = "movieid")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private int movieId;
 
-    @Column(name = "todo")
-    private String todo;
+    @Column(name = "moviename")
+    private String movieName;
 
-    @Column(name = "status")
-    private String status;
+    @Column(name = "leadactor")
+    private String leadActor;
 
-    @Column(name = "priority")
-    private String priority;
-
-    public Todo() {
+    public Movie() {
     }
 
-    public Todo(int id, String todo, String priority, String status) {
-        this.id = id;
-        this.todo = todo;
-        this.priority = priority;
-        this.status = status;
+    public Movie(int movieId, String movieName, String leadActor) {
+        this.movieId = movieId;
+        this.movieName = movieName;
+        this.leadActor = leadActor;
     }
 
-    public int getId() {
-        return id;
+    public int getMovieId() {
+        return movieId;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setMovieId(int movieId) {
+        this.movieId = movieId;
     }
 
-    public String getTodo() {
-        return todo;
+    public String getMovieName() {
+        return movieName;
     }
 
-    public void setTodo(String todo) {
-        this.todo = todo;
+    public void setMovieName(String movieName) {
+        this.movieName = movieName;
     }
 
-    public String getPriority() {
-        return priority;
+    public String getLeadActor() {
+        return leadActor;
     }
 
-    public void setPriority(String priority) {
-        this.priority = priority;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
+    public void setLeadActor(String leadActor) {
+        this.leadActor = leadActor;
     }
 }
 
-package com.example.todo.repository;
+package com.example.movie.repository;
 
-import com.example.todo.model.Todo;
+import com.example.movie.model.Movie;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TodoJpaRepository extends JpaRepository<Todo, Integer> {
+public interface MovieJpaRepository extends JpaRepository<Movie, Integer> {
 }
 
-package com.example.todo.repository;
 
-import com.example.todo.model.Todo;
+package com.example.movie.repository;
+
+import com.example.movie.model.Movie;
 
 import java.util.*;
 
-public interface TodoRepository {
+public interface MovieRepository {
 
-    ArrayList<Todo> getTodos();
+    ArrayList<Movie> getMovies();
 
-    Todo getTodoById(int todoId);
+    Movie getMovieById(int movieId);
 
-    Todo addTodo(Todo todo);
+    Movie addMovie(Movie movie);
 
-    Todo updateTodo(int todoId, Todo todo);
+    Movie updateMovie(int movieId, Movie movie);
 
-    void deleteTodo(int todoId);
+    void deleteMovie(int movieId);
 }
 
-package com.example.todo.service;
+package com.example.movie.service;
 
-import com.example.todo.model.Todo;
-import com.example.todo.repository.TodoJpaRepository;
-import com.example.todo.repository.TodoRepository;
+import com.example.movie.model.Movie;
+import com.example.movie.repository.MovieJpaRepository;
+import com.example.movie.repository.MovieRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -104,108 +93,105 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.*;
 
 @Service
-public class TodoJpaService implements TodoRepository {
+public class MovieJpaService implements MovieRepository {
 
     @Autowired
-    private TodoJpaRepository todoJpaRepository;
+    private MovieJpaRepository movieJpaRepository;
 
     @Override
-    public ArrayList<Todo> getTodos() {
-        List<Todo> todolist = todoJpaRepository.findAll();
-        ArrayList<Todo> todos = new ArrayList<>(todolist);
-        return todos;
+    public ArrayList<Movie> getMovies() {
+        List<Movie> movielist = movieJpaRepository.findAll();
+        ArrayList<Movie> movies = new ArrayList<>(movielist);
+        return movies;
     }
 
     @Override
-    public Todo getTodoById(int id) {
+    public Movie getMovieById(int movieId) {
         try {
-            Todo todo = todoJpaRepository.findById(id).get();
-            return todo;
+            Movie movie = movieJpaRepository.findById(movieId).get();
+            return movie;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
     }
 
     @Override
-    public Todo addTodo(Todo todo) {
-        todoJpaRepository.save(todo);
-        return todo;
+    public Movie addMovie(Movie movie) {
+        movieJpaRepository.save(movie);
+        return movie;
     }
 
     @Override
-    public Todo updateTodo(int id, Todo todo) {
+    public Movie updateMovie(int movieId, Movie movie) {
         try {
-            Todo newTodo = todoJpaRepository.findById(id).get();
-
-            if (todo.getTodo() != null) {
-                newTodo.setTodo(todo.getTodo());
+            Movie newMovie = movieJpaRepository.findById(movieId).get();
+            if (movie.getMovieName() != null) {
+                newMovie.setMovieName(movie.getMovieName());
             }
-            if (todo.getPriority() != null) {
-                newTodo.setPriority(todo.getPriority());
-            }
-            if (todo.getStatus() != null) {
-                newTodo.setStatus(todo.getStatus());
+            if (movie.getLeadActor() != null) {
+                newMovie.setLeadActor(movie.getLeadActor());
             }
 
-            todoJpaRepository.save(newTodo);
-            return newTodo;
+            movieJpaRepository.save(newMovie);
+            return newMovie;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
     }
 
     @Override
-    public void deleteTodo(int id) {
+    public void deleteMovie(int movieId) {
         try {
-            todoJpaRepository.deleteById(id);
+            movieJpaRepository.deleteById(movieId);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
     }
 }
 
-package com.example.todo.controller;
 
-import com.example.todo.service.TodoJpaService;
-import com.example.todo.model.Todo;
+package com.example.movie.controller;
+
+import com.example.movie.service.MovieJpaService;
+import com.example.movie.model.Movie;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 
 @RestController
-public class TodoController {
+public class MovieController {
 
     @Autowired
-    private TodoJpaService todoService;
+    private MovieJpaService movieService;
 
-    @GetMapping("/todos")
-    public ArrayList<Todo> getTodos() {
+    @GetMapping("/movies")
+    public ArrayList<Movie> getMovies() {
 
-        return todoService.getTodos();
+        return movieService.getMovies();
     }
 
-    @GetMapping("/todos/{id}")
-    public Todo getTodoById(@PathVariable("id") int id) {
+    @GetMapping("/movies/{movieId}")
+    public Movie getMovieById(@PathVariable("movieId") int movieId) {
 
-        return todoService.getTodoById(id);
+        return movieService.getMovieById(movieId);
     }
 
-    @PostMapping("/todos")
-    public Todo addTodo(@RequestBody Todo todo) {
+    @PostMapping("/movies")
+    public Movie addMovie(@RequestBody Movie movie) {
 
-        return todoService.addTodo(todo);
+        return movieService.addMovie(movie);
     }
 
-    @PutMapping("/todos/{id}")
-    public Todo updateTodo(@PathVariable("id") int id, @RequestBody Todo todo) {
+    @PutMapping("/movies/{movieId}")
+    public Movie updateMovie(@PathVariable("movieId") int movieId, @RequestBody Movie movie) {
 
-        return todoService.updateTodo(id, todo);
+        return movieService.updateMovie(movieId, movie);
     }
 
-    @DeleteMapping("/todos/{id}")
-    public void deleteTodo(@PathVariable int id) {
+    @DeleteMapping("/movies/{movieId}")
+    public void deleteMovie(@PathVariable("movieId") int movieId) {
 
-        todoService.deleteTodo(id);
+        movieService.deleteMovie(movieId);
     }
 }
