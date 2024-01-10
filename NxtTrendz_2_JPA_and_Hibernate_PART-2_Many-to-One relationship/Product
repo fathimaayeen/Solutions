@@ -1,0 +1,239 @@
+package com.example.nxttrendz2.model;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="product")
+public class Product {
+    @Id
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+    @Column(name = "price")
+    private Double price;
+    @ManyToOne
+    @JoinColumn(name = "categoryid")
+    private Category category;
+
+    public Product() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+}
+
+package com.example.nxttrendz2.repository;
+
+import com.example.nxttrendz2.model.Category;
+import com.example.nxttrendz2.model.Product;
+
+import java.util.ArrayList;
+
+public interface ProductRepository {
+    ArrayList<Product> getProducts();
+
+    Product getProductById(int productId);
+
+    Product addProduct(Product product);
+
+    Product updateProduct(int productId, Product product);
+
+    void deleteProduct(int productId);
+
+    Category getProductCategory(int productId);
+}
+
+package com.example.nxttrendz2.repository;
+
+import com.example.nxttrendz2.model.Product;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ProductJpaRepository extends JpaRepository<Product, Integer> {
+
+}
+
+package com.example.nxttrendz2.service;
+
+import com.example.nxttrendz2.model.Category;
+import com.example.nxttrendz2.model.Product;
+import com.example.nxttrendz2.repository.ProductJpaRepository;
+import com.example.nxttrendz2.repository.ProductRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class ProductJpaService implements ProductRepository {
+    @Autowired
+    private ProductJpaRepository productJpaRepository;
+
+    @Autowired
+    private CategoryJpaService categoryJpaService;
+
+    @Override
+    public ArrayList<Product> getProducts() {
+        List<Product> productsList = productJpaRepository.findAll();
+        ArrayList<Product> products = new ArrayList<>(productsList);
+        return products;
+    }
+
+    @Override
+    public Product getProductById(int productId) {
+        try {
+            Product product = productJpaRepository.findById(productId).get();
+            return product;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public Product addProduct(Product product) {
+        int categoryId = product.getCategory().getId();
+
+        Category category = categoryJpaService.getCategoryById(categoryId);
+        product.setCategory(category);
+
+        productJpaRepository.save(product);
+        return product;
+    }
+
+    @Override
+    public Product updateProduct(int productId, Product product) {
+        try {
+            Product newProduct = productJpaRepository.findById(productId).get();
+            if (product.getCategory() != null) {
+                int categoryId = product.getCategory().getId();
+                Category newCategory = categoryJpaService.getCategoryById(categoryId);
+                newProduct.setCategory(newCategory);
+            }
+            if (product.getName() != null) {
+                newProduct.setName(product.getName());
+            }
+            if (product.getDescription() != null) {
+                newProduct.setDescription(product.getDescription());
+            }
+            if (product.getPrice() != null) {
+                newProduct.setPrice(product.getPrice());
+            }
+            productJpaRepository.save(newProduct);
+            return newProduct;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public void deleteProduct(int productId) {
+        try {
+            productJpaRepository.deleteById(productId);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+    }
+
+    @Override
+    public Category getProductCategory(int productId) {
+        try {
+            Product product = productJpaRepository.findById(productId).get();
+            Category category = product.getCategory();
+            return category;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+}
+
+package com.example.nxttrendz2.controller;
+
+import com.example.nxttrendz2.model.Category;
+import com.example.nxttrendz2.model.Product;
+import com.example.nxttrendz2.service.ProductJpaService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+
+@RestController
+public class ProductController {
+    @Autowired
+    private ProductJpaService productJpaService;
+
+    @GetMapping("/categories/products")
+    public ArrayList<Product> getProducts() {
+        return productJpaService.getProducts();
+    }
+
+    @GetMapping("/categories/products/{productId}")
+    public Product getProductById(@PathVariable("productId") int productId) {
+        return productJpaService.getProductById(productId);
+    }
+
+    @PostMapping("/categories/products")
+    public Product addProduct(@RequestBody Product product) {
+        return productJpaService.addProduct(product);
+    }
+
+    @PutMapping("/categories/products/{productId}")
+    public Product updateProduct(@PathVariable("productId") int productId, @RequestBody Product product) {
+        return productJpaService.updateProduct(productId, product);
+    }
+
+    @DeleteMapping("/categories/products/{productId}")
+    public void deleteProduct(@PathVariable("productId") int productId) {
+        productJpaService.deleteProduct(productId);
+    }
+
+    @GetMapping("/products/{productId}/category")
+    public Category getProductCategory(@PathVariable("productId") int productId) {
+        return productJpaService.getProductCategory(productId);
+    }
+}
