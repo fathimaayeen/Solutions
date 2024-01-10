@@ -1,0 +1,246 @@
+package com.example.dinemaster.model;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="chef")
+public class Chef {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
+    @Column(name = "firstname")
+    private String firstName;
+    @Column(name = "lastname")
+    private String lastName;
+    @Column(name = "expertise")
+    private String expertise;
+    @Column(name = "experienceyears")
+    private int experienceYears;
+    @ManyToOne
+    @JoinColumn(name = "restaurantid")
+    private Restaurant restaurant;
+
+    public Chef() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getExpertise() {
+        return expertise;
+    }
+
+    public void setExpertise(String expertise) {
+        this.expertise = expertise;
+    }
+
+    public int getExperienceYears() {
+        return experienceYears;
+    }
+
+    public void setExperienceYears(int experienceYears) {
+        this.experienceYears = experienceYears;
+    }
+
+    public Restaurant getRestaurant() {
+        return restaurant;
+    }
+
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
+    }
+}
+
+
+package com.example.dinemaster.repository;
+
+import com.example.dinemaster.model.Chef;
+import com.example.dinemaster.model.Restaurant;
+
+import java.util.ArrayList;
+
+public interface ChefRepository {
+    ArrayList<Chef> getChefs();
+    Chef getChefById(int chefId);
+    Chef addChef(Chef chef);
+    Chef updateChef(int chefId, Chef chef);
+    void deleteChef(int chefId);
+    Restaurant getChefRestaurant(int chefId);
+}
+
+package com.example.dinemaster.repository;
+
+import com.example.dinemaster.model.Chef;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ChefJpaRepository extends JpaRepository<Chef, Integer> {
+
+}
+
+package com.example.dinemaster.service;
+
+import com.example.dinemaster.model.Chef;
+import com.example.dinemaster.model.Restaurant;
+import com.example.dinemaster.repository.ChefJpaRepository;
+import com.example.dinemaster.repository.ChefRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class ChefJpaService implements ChefRepository {
+    @Autowired
+    private ChefJpaRepository chefJpaRepository;
+
+    @Autowired
+    private RestaurantJpaService restaurantJpaService;
+
+    @Override
+    public ArrayList<Chef> getChefs() {
+        List<Chef> chefsList = chefJpaRepository.findAll();
+        ArrayList<Chef> chefs = new ArrayList<>(chefsList);
+        return chefs;
+    }
+
+    @Override
+    public Chef getChefById(int chefId) {
+        try {
+            Chef chef = chefJpaRepository.findById(chefId).get();
+            return chef;
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public Chef addChef(Chef chef) {
+        int restaurantId = chef.getRestaurant().getId();
+        Restaurant restaurant = restaurantJpaService.getRestaurantById(restaurantId);
+        chef.setRestaurant(restaurant);
+        chefJpaRepository.save(chef);
+        return chef;
+    }
+
+    @Override
+    public Chef updateChef(int chefId, Chef chef) {
+        try {
+            Chef newChef = chefJpaRepository.findById(chefId).get();
+            if(chef.getRestaurant() != null) {
+                int restaurantId = chef.getRestaurant().getId();
+                Restaurant restaurant = restaurantJpaService.getRestaurantById(restaurantId);
+                newChef.setRestaurant(restaurant);
+            }
+            if(chef.getFirstName()!=null){
+                newChef.setFirstName(chef.getFirstName());
+            }
+            if(chef.getLastName()!=null){
+                newChef.setLastName(chef.getLastName());
+            }
+            if(chef.getExpertise()!=null){
+                newChef.setExpertise(chef.getExpertise());
+            }
+            if(chef.getExperienceYears()!=0){
+                newChef.setExperienceYears(chef.getExperienceYears());
+            }
+            chefJpaRepository.save(newChef);
+            return newChef;
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public void deleteChef(int chefId) {
+        try {
+            chefJpaRepository.deleteById(chefId);
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+    }
+
+    @Override
+    public Restaurant getChefRestaurant(int chefId) {
+        try {
+            Chef chef = chefJpaRepository.findById(chefId).get();
+            Restaurant restaurant = chef.getRestaurant();
+            return restaurant;
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+}
+
+package com.example.dinemaster.controller;
+
+import com.example.dinemaster.model.Chef;
+import com.example.dinemaster.model.Restaurant;
+import com.example.dinemaster.service.ChefJpaService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+
+@RestController
+public class ChefController {
+    @Autowired
+    private ChefJpaService chefJpaService;
+
+    @GetMapping("/restaurants/chefs")
+    public ArrayList<Chef> getChefs() {
+        return chefJpaService.getChefs();
+    }
+
+    @GetMapping("/restaurants/chefs/{chefId}")
+    public Chef getChefById(@PathVariable("chefId") int chefId) {
+        return chefJpaService.getChefById(chefId);
+    }
+
+    @PostMapping("/restaurants/chefs")
+    public Chef addChef(@RequestBody Chef chef) {
+        return chefJpaService.addChef(chef);
+    }
+
+    @PutMapping("/restaurants/chefs/{chefId}")
+    public Chef updateChef(@PathVariable("chefId") int chefId, @RequestBody Chef chef) {
+        return chefJpaService.updateChef(chefId, chef);
+    }
+
+    @DeleteMapping("/restaurants/chefs/{chefId}")
+    public void deleteChef(@PathVariable int chefId) {
+        chefJpaService.deleteChef(chefId);
+    }
+
+    @GetMapping("/chefs/{chefId}/restaurant")
+    public Restaurant getChefRestaurant(@PathVariable int chefId) {
+        return chefJpaService.getChefRestaurant(chefId);
+    }
+}
