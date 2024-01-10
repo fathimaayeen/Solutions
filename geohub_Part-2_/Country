@@ -1,0 +1,216 @@
+package com.example.geohub.model;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="country")
+public class Country {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "countryid")
+    private int countryId;
+    @Column(name = "countryname")
+    private String countryName;
+    @Column(name = "currency")
+    private String currency;
+    @Column(name = "population")
+    private long population;
+    @Column(name = "latitude")
+    private String latitude;
+    @Column(name = "longitude")
+    private String longitude;
+
+    public Country() {
+    }
+
+    public int getCountryId() {
+        return countryId;
+    }
+
+    public void setCountryId(int countryId) {
+        this.countryId = countryId;
+    }
+
+    public String getCountryName() {
+        return countryName;
+    }
+
+    public void setCountryName(String countryName) {
+        this.countryName = countryName;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public long getPopulation() {
+        return population;
+    }
+
+    public void setPopulation(long population) {
+        this.population = population;
+    }
+
+    public String getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(String latitude) {
+        this.latitude = latitude;
+    }
+
+    public String getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(String longitude) {
+        this.longitude = longitude;
+    }
+}
+
+package com.example.geohub.repository;
+
+import com.example.geohub.model.Country;
+
+import java.util.ArrayList;
+
+public interface CountryRepository {
+    ArrayList<Country> getCountries();
+    Country getCountryById(int countryId);
+    Country addCountry(Country country);
+    Country updateCountry(int countryId, Country country);
+    void deleteCountry(int countryId);
+}
+
+package com.example.geohub.repository;
+
+import com.example.geohub.model.Country;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface CountryJpaRepository extends JpaRepository<Country, Integer> {
+
+}
+
+package com.example.geohub.service;
+
+import com.example.geohub.model.Country;
+import com.example.geohub.repository.CountryJpaRepository;
+import com.example.geohub.repository.CountryRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class CountryJpaService implements CountryRepository {
+    @Autowired
+    private CountryJpaRepository countryJpaRepository;
+
+    @Override
+    public ArrayList<Country> getCountries() {
+        List<Country> countriesList = countryJpaRepository.findAll();
+        ArrayList<Country> countries = new ArrayList<>(countriesList);
+        return countries;
+    }
+
+    @Override
+    public Country getCountryById(int countryId) {
+        try {
+            Country country = countryJpaRepository.findById(countryId).get();
+            return country;
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public Country addCountry(Country country) {
+        countryJpaRepository.save(country);
+        return country;
+    }
+
+    @Override
+    public Country updateCountry(int countryId, Country country) {
+        try {
+            Country newCountry = countryJpaRepository.findById(countryId).get();
+            if(country.getCountryName()!=null){
+                newCountry.setCountryName(country.getCountryName());
+            }
+            if(country.getCurrency()!=null){
+                newCountry.setCurrency(country.getCurrency());
+            }
+            if(country.getPopulation()!=0){
+                newCountry.setPopulation(country.getPopulation());
+            }
+            if(country.getLatitude()!=null){
+                newCountry.setLatitude(country.getLatitude());
+            }
+            if(country.getLongitude()!=null){
+                newCountry.setLongitude(country.getLongitude());
+            }
+            countryJpaRepository.save(newCountry);
+            return newCountry;
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public void deleteCountry(int countryId) {
+        try {
+            countryJpaRepository.deleteById(countryId);
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+    }
+}
+
+package com.example.geohub.controller;
+
+import com.example.geohub.model.Country;
+import com.example.geohub.service.CountryJpaService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+
+@RestController
+public class CountryController {
+    @Autowired
+    private CountryJpaService countryJpaService;
+
+    @GetMapping("/countries")
+    public ArrayList<Country> getCountries() {
+        return countryJpaService.getCountries();
+    }
+
+    @GetMapping("/countries/{countryId}")
+    public Country getCountryById(@PathVariable("countryId") int countryId) {
+        return countryJpaService.getCountryById(countryId);
+    }
+
+    @PostMapping("/countries")
+    public Country addCountry(@RequestBody Country country) {
+        return countryJpaService.addCountry(country);
+    }
+
+    @PutMapping("/countries/{countryId}")
+    public Country updateCountry(@PathVariable("countryId") int countryId, @RequestBody Country country) {
+        return countryJpaService.updateCountry(countryId, country);
+    }
+
+    @DeleteMapping("/countries/{countryId}")
+    public void deleteCountry(@PathVariable int countryId) {
+        countryJpaService.deleteCountry(countryId);
+    }
+}
