@@ -1,0 +1,203 @@
+package com.example.dinemaster.model;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="restaurant")
+public class Restaurant {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "address")
+    private String address;
+    @Column(name = "cuisinetype")
+    private String cuisineType;
+    @Column(name = "rating")
+    private int rating;
+
+    public Restaurant() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getCuisineType() {
+        return cuisineType;
+    }
+
+    public void setCuisineType(String cuisineType) {
+        this.cuisineType = cuisineType;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public void setRating(int rating) {
+        this.rating = rating;
+    }
+}
+
+package com.example.dinemaster.repository;
+
+import com.example.dinemaster.model.Restaurant;
+
+import java.util.ArrayList;
+
+public interface RestaurantRepository {
+    ArrayList<Restaurant> getRestaurants();
+    Restaurant getRestaurantById(int restaurantId);
+    Restaurant addRestaurant(Restaurant restaurant);
+    Restaurant updateRestaurant(int restaurantId, Restaurant restaurant);
+    void deleteRestaurant(int restaurantId);
+}
+
+package com.example.dinemaster.repository;
+
+import com.example.dinemaster.model.Restaurant;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface RestaurantJpaRepository extends JpaRepository<Restaurant, Integer> {
+
+}
+
+package com.example.dinemaster.service;
+
+import com.example.dinemaster.model.Restaurant;
+import com.example.dinemaster.repository.RestaurantJpaRepository;
+import com.example.dinemaster.repository.RestaurantRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class RestaurantJpaService implements RestaurantRepository {
+    @Autowired
+    private RestaurantJpaRepository restaurantJpaRepository;
+
+    @Override
+    public ArrayList<Restaurant> getRestaurants() {
+        List<Restaurant> restaurantsList = restaurantJpaRepository.findAll();
+        ArrayList<Restaurant> restaurants = new ArrayList<>(restaurantsList);
+        return restaurants;
+    }
+
+    @Override
+    public Restaurant getRestaurantById(int restaurantId) {
+        try {
+            Restaurant restaurant = restaurantJpaRepository.findById(restaurantId).get();
+            return restaurant;
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public Restaurant addRestaurant(Restaurant restaurant) {
+        restaurantJpaRepository.save(restaurant);
+        return restaurant;
+    }
+
+    @Override
+    public Restaurant updateRestaurant(int restaurantId, Restaurant restaurant) {
+        try {
+            Restaurant newRestaurant = restaurantJpaRepository.findById(restaurantId).get();
+            if(restaurant.getName()!=null){
+                newRestaurant.setName(restaurant.getName());
+            }
+            if(restaurant.getAddress()!=null){
+                newRestaurant.setAddress(restaurant.getAddress());
+            }
+            if(restaurant.getCuisineType()!=null){
+                newRestaurant.setCuisineType(restaurant.getCuisineType());
+            }
+            if(restaurant.getRating()!=0){
+                newRestaurant.setRating(restaurant.getRating());
+            }
+            restaurantJpaRepository.save(newRestaurant);
+            return newRestaurant;
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public void deleteRestaurant(int restaurantId) {
+        try {
+            restaurantJpaRepository.deleteById(restaurantId);
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+    }
+}
+
+package com.example.dinemaster.controller;
+
+import com.example.dinemaster.model.Restaurant;
+import com.example.dinemaster.service.RestaurantJpaService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+
+@RestController
+public class RestaurantController {
+    @Autowired
+    private RestaurantJpaService restaurantJpaService;
+
+    @GetMapping("/restaurants")
+    public ArrayList<Restaurant> getRestaurants() {
+        return restaurantJpaService.getRestaurants();
+    }
+
+    @GetMapping("/restaurants/{restaurantId}")
+    public Restaurant getRestaurantById(@PathVariable("restaurantId") int restaurantId) {
+        return restaurantJpaService.getRestaurantById(restaurantId);
+    }
+
+    @PostMapping("/restaurants")
+    public Restaurant addRestaurant(@RequestBody Restaurant restaurant) {
+        return restaurantJpaService.addRestaurant(restaurant);
+    }
+
+    @PutMapping("/restaurants/{restaurantId}")
+    public Restaurant updateRestaurant(@PathVariable("restaurantId") int restaurantId, @RequestBody Restaurant restaurant) {
+        return restaurantJpaService.updateRestaurant(restaurantId, restaurant);
+    }
+
+    @DeleteMapping("/restaurants/{restaurantId}")
+    public void deleteRestaurant(@PathVariable int restaurantId) {
+        restaurantJpaService.deleteRestaurant(restaurantId);
+    }
+}
