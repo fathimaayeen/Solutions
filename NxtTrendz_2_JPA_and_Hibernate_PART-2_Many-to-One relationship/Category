@@ -1,0 +1,177 @@
+package com.example.nxttrendz2.model;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="category")
+public class Category {
+    @Id
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+
+    public Category() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+}
+
+package com.example.nxttrendz2.repository;
+
+import com.example.nxttrendz2.model.Category;
+
+import java.util.ArrayList;
+
+public interface CategoryRepository {
+    ArrayList<Category> getCategories();
+    Category getCategoryById(int categoryId);
+    Category addCategory(Category category);
+    Category updateCategory(int categoryId, Category category);
+    void deleteCategory(int categoryId);
+}
+
+package com.example.nxttrendz2.repository;
+
+import com.example.nxttrendz2.model.Category;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface CategoryJpaRepository extends JpaRepository<Category, Integer> {
+
+}
+
+package com.example.nxttrendz2.service;
+
+import com.example.nxttrendz2.model.Category;
+import com.example.nxttrendz2.repository.CategoryJpaRepository;
+import com.example.nxttrendz2.repository.CategoryRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class CategoryJpaService implements CategoryRepository {
+    @Autowired
+    private CategoryJpaRepository categoryJpaRepository;
+
+    @Override
+    public ArrayList<Category> getCategories() {
+        List<Category> categoriesList = categoryJpaRepository.findAll();
+        ArrayList<Category> categories = new ArrayList<>(categoriesList);
+        return categories;
+    }
+
+    @Override
+    public Category getCategoryById(int categoryId) {
+        try {
+            Category category = categoryJpaRepository.findById(categoryId).get();
+            return category;
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public Category addCategory(Category category) {
+        categoryJpaRepository.save(category);
+        return category;
+    }
+
+    @Override
+    public Category updateCategory(int categoryId, Category category) {
+        try {
+            Category newCategory = categoryJpaRepository.findById(categoryId).get();
+            if(category.getName()!=null){
+                newCategory.setName(category.getName());
+            }
+            if(category.getDescription()!=null){
+                newCategory.setDescription(category.getDescription());
+            }
+            categoryJpaRepository.save(newCategory);
+            return newCategory;
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public void deleteCategory(int categoryId) {
+        try {
+            categoryJpaRepository.deleteById(categoryId);
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+    }
+}
+
+package com.example.nxttrendz2.controller;
+
+import com.example.nxttrendz2.model.Category;
+import com.example.nxttrendz2.service.CategoryJpaService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+
+@RestController
+public class CategoryController {
+    @Autowired
+    private CategoryJpaService categoryJpaService;
+
+    @GetMapping("/categories")
+    public ArrayList<Category> getCategories() {
+        return categoryJpaService.getCategories();
+    }
+
+    @GetMapping("/categories/{categoryId}")
+    public Category getCategoryById(@PathVariable("categoryId") int categoryId) {
+        return categoryJpaService.getCategoryById(categoryId);
+    }
+
+    @PostMapping("/categories")
+    public Category addCategory(@RequestBody Category category) {
+        return categoryJpaService.addCategory(category);
+    }
+
+    @PutMapping("/categories/{categoryId}")
+    public Category updateCategory(@PathVariable("categoryId") int categoryId, @RequestBody Category category) {
+        return categoryJpaService.updateCategory(categoryId, category);
+    }
+
+    @DeleteMapping("/categories/{categoryId}")
+    public void deleteCategory(@PathVariable("categoryId") int categoryId) {
+        categoryJpaService.deleteCategory(categoryId);
+    }
+}
